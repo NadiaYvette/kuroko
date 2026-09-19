@@ -44,8 +44,12 @@
    - Built atop `persistent-effectful` and SQLite WAL. Sessions, messages, and tool audits are durable append-only event streams.
 4. **Hermetic Configuration (`Kuroko.Config.Dhall`)**:
    - Typed agent configurations, safety policies, and model parameters evaluated via Dhall.
-5. **Native MCP Support (`Kuroko.Effect.MCP`)**:
-   - Exposes tools over stdio JSON-RPC 2.0 to any Model Context Protocol host (Cursor, Zed, Claude Desktop).
+5. **Native MCP Support (`Kuroko.Effect.MCP` & `Kuroko.Server.MCP`)**:
+   - Stdio transport for local CLI agent workflows.
+   - HTTP/SSE transport built with `servant-effectful` running natively inside `Eff es` without unlifting ceremony.
+6. **Servant-Client & REST API (`Kuroko.Effect.LLM.ServantClient` & `Kuroko.Server.API`)**:
+   - Typed `servant-client` for OpenAI/Claude endpoints (~90 LOC replacing 3,000 LOC of OpenAPI generators).
+   - Agent REST management API exposing `/api/v1/react` and `/api/v1/tools` with automatic OpenAPI derivation.
 
 ---
 
@@ -55,19 +59,23 @@
 src/
 ├── Kuroko/
 │   ├── Core/
-│   │   ├── Types.hs         -- Message, Role, Token, ToolCall, ToolDef
-│   │   └── Schema.hs        -- JSON Schema builders
+│   │   ├── Types.hs             -- Message, Role, Token, ToolCall, ToolDef
+│   │   └── Schema.hs            -- JSON Schema builders
 │   ├── Effect/
-│   │   ├── LLM.hs           -- LLM effect definition
-│   │   ├── LLM/Mock.hs      -- Deterministic mock handler
-│   │   ├── LLM/OpenAI.hs    -- OpenAI / Claude HTTP streaming handler
-│   │   ├── Tool.hs          -- Tool execution effect & registry
-│   │   ├── Store.hs         -- Persistent SQLite session & audit store
-│   │   └── MCP.hs           -- Stdio Model Context Protocol (MCP) server
+│   │   ├── LLM.hs               -- LLM effect definition
+│   │   ├── LLM/Mock.hs          -- Deterministic mock handler
+│   │   ├── LLM/OpenAI.hs        -- Raw HTTP streaming client
+│   │   ├── LLM/ServantClient.hs -- Typed Servant-Client LLM handler
+│   │   ├── Tool.hs              -- Tool execution effect & registry
+│   │   ├── Store.hs             -- Persistent SQLite session & audit store
+│   │   └── MCP.hs               -- Stdio Model Context Protocol (MCP) server
+│   ├── Server/
+│   │   ├── MCP.hs               -- Servant-effectful HTTP/SSE MCP server
+│   │   └── API.hs               -- Servant-effectful Agent REST API
 │   ├── Workflow/
-│   │   └── ReAct.hs         -- ReAct reasoning & tool execution loop
+│   │   └── ReAct.hs             -- ReAct reasoning & tool execution loop
 │   └── Config/
-│       └── Dhall.hs         -- Typed Dhall configuration loader
+│       └── Dhall.hs             -- Typed Dhall configuration loader
 └── Kuroko.hs                -- Top-level re-exports
 
 app/

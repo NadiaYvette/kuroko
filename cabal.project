@@ -3,5 +3,14 @@ packages:
     ../persistent-effectful
     ../vinyl
     ../porcupine/docrecords
+    ../IDA/projects/effectful/servant
+    ../IDA/projects/effectful/wai
+    ../IDA/projects/effectful/warp
+    ../IDA/projects/effectful/http-client
+    ../servant/servant
+    ../servant/servant-server
+    ../servant/servant-client
+    ../servant/servant-client-core
+    ../servant/servant-openapi3
 
 write-ghc-environment-files: always

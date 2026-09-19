@@ -51,9 +51,12 @@ library
         Kuroko.Effect.LLM
         Kuroko.Effect.LLM.Mock
         Kuroko.Effect.LLM.OpenAI
+        Kuroko.Effect.LLM.ServantClient
         Kuroko.Effect.Tool
         Kuroko.Effect.Store
         Kuroko.Effect.MCP
+        Kuroko.Server.MCP
+        Kuroko.Server.API
         Kuroko.Workflow.ReAct
         Kuroko.Config.Dhall
     build-depends:
@@ -69,15 +72,26 @@ library
         effectful-th >= 1.0 && < 2,
         haskeline,
         http-client,
+        http-client-effectful,
         http-client-tls,
+        http-types,
         optparse-applicative,
         persistent >= 2.14,
         persistent-effectful,
         persistent-sqlite >= 2.14,
+        servant >= 0.20,
+        servant-client >= 0.20,
+        servant-client-core >= 0.20,
+        servant-effectful,
+        servant-server >= 0.20,
         text,
         time,
         vector,
-        vinyl
+        vinyl,
+        wai,
+        wai-effectful,
+        warp,
+        warp-effectful
 
 executable kuroko
     import:             common-options
