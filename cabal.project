@@ -1,0 +1,7 @@
+packages:
+    .
+    ../persistent-effectful
+    ../vinyl
+    ../porcupine/docrecords
+
+write-ghc-environment-files: always

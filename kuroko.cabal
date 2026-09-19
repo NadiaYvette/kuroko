@@ -1,0 +1,105 @@
+cabal-version:      3.0
+name:               kuroko
+version:            0.1.0.0
+synopsis:           Unobtrusive, effectful autonomous agent sidecar in modern Haskell
+description:
+    Kuroko (黒子) is a compact, high-assurance autonomous agent runtime built atop
+    effectful, extensible records (vinyl/docrecords), persistent-effectful, and Dhall.
+license:            Apache-2.0
+author:             Nadia Yvette
+maintainer:         nadia@example.com
+category:           Control, Effects, AI, Agent
+build-type:         Simple
+extra-doc-files:    README.md
+
+common common-options
+    default-language:   GHC2021
+    default-extensions:
+        DataKinds
+        DeriveAnyClass
+        DeriveGeneric
+        DerivingStrategies
+        DuplicateRecordFields
+        GADTs
+        GeneralizedNewtypeDeriving
+        LambdaCase
+        MultiParamTypeClasses
+        OverloadedRecordDot
+        OverloadedStrings
+        RankNTypes
+        RecordWildCards
+        ScopedTypeVariables
+        TypeApplications
+        TypeFamilies
+        TypeOperators
+    ghc-options:
+        -Wall
+        -Wcompat
+        -Widentities
+        -Wincomplete-record-updates
+        -Wincomplete-uni-patterns
+        -Wpartial-fields
+        -Wredundant-constraints
+
+library
+    import:             common-options
+    hs-source-dirs:     src
+    exposed-modules:
+        Kuroko
+        Kuroko.Core.Types
+        Kuroko.Core.Schema
+        Kuroko.Effect.LLM
+        Kuroko.Effect.LLM.Mock
+        Kuroko.Effect.LLM.OpenAI
+        Kuroko.Effect.Tool
+        Kuroko.Effect.Store
+        Kuroko.Effect.MCP
+        Kuroko.Workflow.ReAct
+        Kuroko.Config.Dhall
+    build-depends:
+        base >= 4.16 && < 5,
+        aeson >= 2.0,
+        aeson-pretty,
+        bytestring,
+        containers,
+        dhall,
+        docrecords,
+        effectful >= 2.0 && < 3,
+        effectful-core >= 2.0 && < 3,
+        effectful-th >= 1.0 && < 2,
+        haskeline,
+        http-client,
+        http-client-tls,
+        optparse-applicative,
+        persistent >= 2.14,
+        persistent-effectful,
+        persistent-sqlite >= 2.14,
+        text,
+        time,
+        vector,
+        vinyl
+
+executable kuroko
+    import:             common-options
+    hs-source-dirs:     app
+    main-is:            Main.hs
+    build-depends:
+        base,
+        kuroko,
+        effectful,
+        optparse-applicative,
+        text
+
+test-suite kuroko-test
+    import:             common-options
+    type:               exitcode-stdio-1.0
+    hs-source-dirs:     test
+    main-is:            Spec.hs
+    other-modules:
+        MockSpec
+    build-depends:
+        base,
+        kuroko,
+        effectful,
+        hspec,
+        text
