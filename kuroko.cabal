@@ -52,6 +52,7 @@ library
         Kuroko.Effect.LLM.Mock
         Kuroko.Effect.LLM.OpenAI
         Kuroko.Effect.LLM.ServantClient
+        Kuroko.Effect.LLM.Louter
         Kuroko.Effect.Tool
         Kuroko.Effect.Store
         Kuroko.Effect.MCP
@@ -75,6 +76,7 @@ library
         http-client-effectful,
         http-client-tls,
         http-types,
+        louter,
         mcp-types,
         mcp-client,
         mcp-effectful,
@@ -117,6 +119,7 @@ test-suite kuroko-test
         MCPSpec
         StoreSpec
         DocRecordSpec
+        LouterIntegrationSpec
     build-depends:
         base,
         aeson,
@@ -126,6 +129,7 @@ test-suite kuroko-test
         docrecords,
         effectful,
         hspec,
+        louter,
         mcp-types,
         mcp-effectful,
         servant,

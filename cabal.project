@@ -15,6 +15,7 @@ packages:
     ../mcp/mcp-types
     ../mcp/mcp-client
     ../mcp/mcp-effectful
+    ../louter
 
 with-compiler: ghc-9.12.2
 
