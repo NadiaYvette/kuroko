@@ -51,4 +51,4 @@ spec = describe "Kuroko.Workflow.ReAct (Mock Suite)" $ do
     (result !! 2).role `shouldBe` RoleTool
     (result !! 2).content `shouldBe` "Echoed: call-1"
     (result !! 3).role `shouldBe` RoleAssistant
-    (result !! 3).content `shouldBe` "Echoed completed successfully."
+    (result !! 3).content `shouldBe` "Echo completed successfully."

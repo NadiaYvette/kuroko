@@ -11,9 +11,9 @@ module Kuroko.Effect.LLM.OpenAI
   , runLLMOpenAI
   ) where
 
-import Data.Aeson (Value, (.=), object)
+import Data.Aeson (Value, object, (.=))
 import qualified Data.Aeson as Aeson
-import qualified Data.ByteString.Lazy as BSL
+import Data.Aeson.Types (parseEither)
 import qualified Data.Foldable
 import Data.Text (Text)
 import qualified Data.Text as Text
@@ -43,38 +43,39 @@ defaultOpenAIConfig key = OpenAIConfig
 runLLMOpenAI :: IOE :> es => OpenAIConfig -> Eff (LLM : es) a -> Eff es a
 runLLMOpenAI cfg action = do
   manager <- liftIO newTlsManager
-  interpret action $ \_ -> \case
-    ChatComplete (ModelId mName) msgs toolDefs -> liftIO $ do
-      let endpoint = Text.unpack cfg.apiBaseUrl <> "/chat/completions"
-      initReq <- parseRequest endpoint
-      let bodyPayload = object
-            [ "model" .= mName
-            , "messages" .= msgs
-            , "tools" .= [ object ["type" .= ("function" :: Text), "function" .= td] | td <- toolDefs ]
-            ]
-          req = initReq
-            { method = "POST"
-            , requestHeaders =
-                [ ("Content-Type", "application/json")
-                , ("Authorization", "Bearer " <> TE.encodeUtf8 cfg.apiKey)
-                ]
-            , requestBody = RequestBodyLBS (Aeson.encode bodyPayload)
-            }
-      resp <- httpLbs req manager
-      case Aeson.eitherDecode (responseBody resp) of
-        Right (val :: Value) -> case parseOpenAIResponse val of
-          Right llmResp -> pure llmResp
-          Left err -> error $ "Failed to parse OpenAI response: " <> err <> "\nBody: " <> show (responseBody resp)
-        Left err -> error $ "Failed to decode HTTP response: " <> err <> "\nBody: " <> show (responseBody resp)
+  let doChat (ModelId mName) msgs toolDefs = do
+        let endpoint = Text.unpack cfg.apiBaseUrl <> "/chat/completions"
+        initReq <- parseRequest endpoint
+        let bodyPayload = object
+              [ "model" .= mName
+              , "messages" .= msgs
+              , "tools" .= [ object ["type" .= ("function" :: Text), "function" .= td] | td <- toolDefs ]
+              ]
+            req = initReq
+              { method = "POST"
+              , requestHeaders =
+                  [ ("Content-Type", "application/json")
+                  , ("Authorization", "Bearer " <> TE.encodeUtf8 cfg.apiKey)
+                  ]
+              , requestBody = RequestBodyLBS (Aeson.encode bodyPayload)
+              }
+        resp <- httpLbs req manager
+        case Aeson.eitherDecode (responseBody resp) of
+          Right (val :: Value) -> case parseOpenAIResponse val of
+            Right llmResp -> pure llmResp
+            Left err -> error $ "Failed to parse OpenAI response: " <> err <> "\nBody: " <> show (responseBody resp)
+          Left err -> error $ "Failed to decode HTTP response: " <> err <> "\nBody: " <> show (responseBody resp)
 
-    StreamTokens (ModelId mName) msgs callback -> do
-      -- Fallback to chat completion and yield result to callback
-      res <- chatComplete (ModelId mName) msgs []
-      callback res.message.content
+  interpret (\env -> \case
+    ChatComplete mid msgs toolDefs -> liftIO $ doChat mid msgs toolDefs
+    StreamTokens mid msgs callback -> do
+      res <- liftIO $ doChat mid msgs []
+      localSeqUnlift env $ \unlift -> unlift (callback res.message.content)
       pure res
+    ) action
 
 parseOpenAIResponse :: Value -> Either String LLMResponse
-parseOpenAIResponse val = flip Aeson.parseEither val $ Aeson.withObject "OpenAIResponse" $ \obj -> do
+parseOpenAIResponse val = flip parseEither val $ Aeson.withObject "OpenAIResponse" $ \obj -> do
   choices <- obj Aeson..: "choices"
   case choices of
     [] -> fail "No choices returned in completion"

@@ -17,10 +17,11 @@ module Kuroko.Server.API
 import Data.Aeson (FromJSON, ToJSON)
 import Data.Proxy (Proxy (..))
 import Data.Text (Text)
-import Effectful
+import Effectful hiding ((:>))
+import qualified Effectful as Eff
 import Effectful.Servant.Server (Server, serve)
+import Effectful.Wai (Application)
 import GHC.Generics (Generic)
-import Network.Wai (Application)
 import Servant.API
 
 import Kuroko.Core.Types
@@ -50,7 +51,7 @@ type KurokoAPI =
     )
 
 -- | Servant-effectful implementation of Kuroko's REST API.
-kurokoServer :: (IOE :> es, LLM :> es, ToolExec :> es) => Server KurokoAPI es
+kurokoServer :: (LLM Eff.:> es, ToolExec Eff.:> es) => Server KurokoAPI es
 kurokoServer = handleReact :<|> listTools
   where
     handleReact req = do
@@ -72,5 +73,5 @@ kurokoServer = handleReact :<|> listTools
         }
 
 -- | Turn the Kuroko Agent API into a WAI Application running in 'Eff es'.
-serveKurokoAPI :: (IOE :> es, LLM :> es, ToolExec :> es) => Eff es Application
+serveKurokoAPI :: (Eff.IOE Eff.:> es, LLM Eff.:> es, ToolExec Eff.:> es) => Eff es (Application es)
 serveKurokoAPI = pure $ serve (Proxy @KurokoAPI) kurokoServer

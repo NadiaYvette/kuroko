@@ -21,26 +21,28 @@ import Kuroko.Effect.LLM
 runLLMMock :: IOE :> es => [LLMResponse] -> Eff (LLM : es) a -> Eff es a
 runLLMMock responses action = do
   ref <- liftIO $ newIORef responses
-  interpret action $ \_ -> \case
+  interpret (\env -> \case
     ChatComplete _ _ _ -> liftIO $ do
       readIORef ref >>= \case
         [] -> error "runLLMMock: Mock responses exhausted!"
         (r:rs) -> do
           writeIORef ref rs
           pure r
-    StreamTokens _ _ callback -> liftIO $ do
-      readIORef ref >>= \case
-        [] -> error "runLLMMock: Mock responses exhausted!"
-        (r:rs) -> do
-          writeIORef ref rs
-          -- Emulate streaming by delivering message content in one chunk
-          callback (r.message.content)
-          pure r
+    StreamTokens _ _ callback -> do
+      m <- liftIO $ do
+        readIORef ref >>= \case
+          [] -> error "runLLMMock: Mock responses exhausted!"
+          (r:rs) -> do
+            writeIORef ref rs
+            pure r
+      localSeqUnlift env $ \unlift -> unlift (callback m.message.content)
+      pure m
+    ) action
 
 -- | Interpret the 'LLM' effect with a single repeating response.
-runLLMConstant :: IOE :> es => LLMResponse -> Eff (LLM : es) a -> Eff es a
-runLLMConstant constantResp = interpret $ \_ -> \case
+runLLMConstant :: LLMResponse -> Eff (LLM : es) a -> Eff es a
+runLLMConstant constantResp = interpret $ \env -> \case
   ChatComplete _ _ _ -> pure constantResp
   StreamTokens _ _ callback -> do
-    callback (constantResp.message.content)
+    localSeqUnlift env $ \unlift -> unlift (callback constantResp.message.content)
     pure constantResp

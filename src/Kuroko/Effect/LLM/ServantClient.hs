@@ -17,14 +17,13 @@ module Kuroko.Effect.LLM.ServantClient
   ) where
 
 import Data.Aeson (FromJSON, ToJSON, Value, object, (.=))
-import qualified Data.Aeson as Aeson
 import Data.Proxy (Proxy (..))
 import Data.Text (Text)
-import qualified Data.Text as Text
-import qualified Data.Text.Encoding as TE
-import Effectful
+import Effectful hiding ((:>))
+import qualified Effectful as Eff
 import Effectful.Dispatch.Dynamic
-import Network.HTTP.Client (Manager, newManager)
+import GHC.Generics (Generic)
+import Network.HTTP.Client (newManager)
 import Network.HTTP.Client.TLS (tlsManagerSettings)
 import Servant.API
 import Servant.Client
@@ -65,26 +64,28 @@ chatCompletionsClient :: Maybe Text -> ChatReq -> ClientM ChatResp
 chatCompletionsClient = client (Proxy @ChatCompletionsAPI)
 
 -- | Interpret the 'LLM' effect using Servant-Client.
-runLLMServantClient :: IOE :> es => BaseUrl -> Text -> Eff (LLM : es) a -> Eff es a
+runLLMServantClient :: (Eff.IOE Eff.:> es) => BaseUrl -> Text -> Eff (LLM : es) a -> Eff es a
 runLLMServantClient baseUrl apiKey action = do
   mgr <- liftIO $ newManager tlsManagerSettings
   let clientEnv = mkClientEnv mgr baseUrl
       authHeader = Just ("Bearer " <> apiKey)
-  interpret action $ \_ -> \case
-    ChatComplete (ModelId mName) msgs toolDefs -> liftIO $ do
-      let toolObjs = [ object ["type" .= ("function" :: Text), "function" .= td] | td <- toolDefs ]
-          reqPayload = ChatReq mName msgs toolObjs
-      runClientM (chatCompletionsClient authHeader reqPayload) clientEnv >>= \case
-        Left clientErr -> error $ "Servant client error calling LLM: " <> show clientErr
-        Right resp -> case resp.choices of
-          [] -> error "Servant client error: LLM returned empty choices list"
-          (firstChoice:_) -> do
-            let finalUsage = case resp.usage of
-                  Just u  -> u
-                  Nothing -> Usage 0 0 0
-            pure $ LLMResponse firstChoice.message finalUsage
+      doChat (ModelId mName) msgs toolDefs = do
+        let toolObjs = [ object ["type" .= ("function" :: Text), "function" .= td] | td <- toolDefs ]
+            reqPayload = ChatReq mName msgs toolObjs
+        runClientM (chatCompletionsClient authHeader reqPayload) clientEnv >>= \case
+          Left clientErr -> error $ "Servant client error calling LLM: " <> show clientErr
+          Right resp -> case resp.choices of
+            [] -> error "Servant client error: LLM returned empty choices list"
+            (firstChoice:_) -> do
+              let finalUsage = case resp.usage of
+                    Just u  -> u
+                    Nothing -> Usage 0 0 0
+              pure $ LLMResponse firstChoice.message finalUsage
 
-    StreamTokens (ModelId mName) msgs callback -> do
-      res <- chatComplete (ModelId mName) msgs []
-      callback res.message.content
+  interpret (\env -> \case
+    ChatComplete mid msgs toolDefs -> liftIO $ doChat mid msgs toolDefs
+    StreamTokens mid msgs callback -> do
+      res <- liftIO $ doChat mid msgs []
+      localSeqUnlift env $ \unlift -> unlift (callback res.message.content)
       pure res
+    ) action

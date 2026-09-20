@@ -11,8 +11,6 @@ module Kuroko.Workflow.ReAct
   ) where
 
 import Control.Monad (forM)
-import Data.Text (Text)
-import qualified Data.Text as T
 import Effectful
 
 import Kuroko.Core.Types

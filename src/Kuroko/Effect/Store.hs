@@ -77,7 +77,7 @@ makeEffect ''SessionStore
 runSessionStoreSqlite :: IOE :> es => FilePath -> Eff (SessionStore : es) a -> Eff es a
 runSessionStoreSqlite dbPath action = do
   liftIO $ runSqlite (Text.pack dbPath) $ runMigration migrateAll
-  interpret action $ \_ -> \case
+  interpret (\_ -> \case
     CreateSession title -> liftIO $ do
       now <- getCurrentTime
       runSqlite (Text.pack dbPath) $ insert (Session title now)
@@ -102,6 +102,7 @@ runSessionStoreSqlite dbPath action = do
       let argsStr = TE.decodeUtf8 (BSL.toStrict (Aeson.encode args))
       runSqlite (Text.pack dbPath) $
         insert_ (ToolExecutionAudit sid name argsStr res ok now)
+    ) action
   where
     toMessage (StoredMessage _ r c mtc mcid _) =
       let parsedRole = case r of

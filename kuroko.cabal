@@ -75,10 +75,13 @@ library
         http-client-effectful,
         http-client-tls,
         http-types,
+        mcp-types,
+        mcp-client,
+        mcp-effectful,
         optparse-applicative,
         persistent >= 2.14,
         persistent-effectful,
-        persistent-sqlite >= 2.14,
+        persistent-sqlite >= 2.13,
         servant >= 0.20,
         servant-client >= 0.20,
         servant-client-core >= 0.20,
@@ -111,9 +114,22 @@ test-suite kuroko-test
     main-is:            Spec.hs
     other-modules:
         MockSpec
+        MCPSpec
+        StoreSpec
+        DocRecordSpec
     build-depends:
         base,
+        aeson,
+        containers,
+        filepath,
         kuroko,
+        docrecords,
         effectful,
         hspec,
-        text
+        mcp-types,
+        mcp-effectful,
+        servant,
+        servant-client,
+        temporary,
+        text,
+        vinyl

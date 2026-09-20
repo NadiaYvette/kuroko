@@ -51,25 +51,25 @@ main = do
     CmdMCP -> runEff $ do
       let reg = emptyRegistry
       runToolExecRegistry reg serveMCPStdio
-    CmdRun (RunOpts mName mCfg prompt) -> do
-      cfg <- case mCfg of
+    CmdRun opts' -> do
+      cfg <- case opts'.optConfig of
         Just p  -> loadAgentConfig p
         Nothing -> pure defaultAgentConfig
       TIO.putStrLn $ "=== Kuroko Agent [" <> cfg.name <> "] ==="
       runEff $ do
         -- Mock runner demonstration for initial scaffold
         let mockResponse = LLMResponse
-              { message = assistantMsg ("Acknowledged: " <> T.pack prompt <> "\nReady for instructions.") Nothing
+              { message = assistantMsg ("Acknowledged: " <> T.pack opts'.optPrompt <> "\nReady for instructions.") Nothing
               , usage = Usage 10 20 30
               }
             reg = emptyRegistry
             initialHistory =
               [ systemMsg cfg.systemPrompt
-              , userMsg (T.pack prompt)
+              , userMsg (T.pack opts'.optPrompt)
               ]
         history <- runLLMConstant mockResponse $
           runToolExecRegistry reg $
-            runReActLoop 5 (ModelId (T.pack mName)) initialHistory
+            runReActLoop 5 (ModelId (T.pack opts'.optModel)) initialHistory
         liftIO $ forM_ history $ \msg -> do
           TIO.putStrLn $ "[" <> T.pack (show msg.role) <> "]: " <> msg.content
   where

@@ -56,7 +56,7 @@ registerTool def handler reg =
 
 -- | Interpret 'ToolExec' given a concrete 'ToolRegistry'.
 runToolExecRegistry :: ToolRegistry es -> Eff (ToolExec : es) a -> Eff es a
-runToolExecRegistry reg action = interpret action $ \_ -> \case
+runToolExecRegistry reg = interpret $ \_ -> \case
   ExecuteTool call -> case Map.lookup call.toolName reg.regHandlers of
     Just handler -> handler call
     Nothing      -> pure $ Left $ "Unknown tool: " <> call.toolName
