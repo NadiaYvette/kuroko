@@ -69,7 +69,8 @@ main = do
               ]
         history <- runLLMConstant mockResponse $
           runToolExecRegistry reg $
-            runReActLoop 5 (ModelId (T.pack opts'.optModel)) initialHistory
+            runToolPolicyConfig cfg.policy $
+              runReActLoop 5 (ModelId (T.pack opts'.optModel)) initialHistory
         liftIO $ forM_ history $ \msg -> do
           TIO.putStrLn $ "[" <> T.pack (show msg.role) <> "]: " <> msg.content
   where

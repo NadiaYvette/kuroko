@@ -76,6 +76,50 @@ spec = describe "Kuroko.Effect.Policy" $ do
           secs `shouldSatisfy` (> 0.0)
         other -> expectationFailure $ "Expected (AllowAuto, AllowAuto, Throttled ...) but got: " <> show other
 
+  describe "Glob & PCRE Pattern Rules" $ do
+    it "matches tool names via Glob wildcards" $ do
+      matchToolGlob "mcp__*" "mcp__github__search" `shouldBe` True
+      matchToolGlob "mcp__*" "local_bash" `shouldBe` False
+      matchToolGlob "git_*" "git_commit" `shouldBe` True
+      matchToolGlob "fs:*" "fs:read_file" `shouldBe` True
+
+    it "matches argument payloads via PCRE regular expressions" $ do
+      matchArgPCRE "rm\\s+-(rf|r)" "{\"cmd\":\"rm -rf /tmp/data\"}" `shouldBe` True
+      matchArgPCRE "rm\\s+-(rf|r)" "{\"cmd\":\"ls -la\"}" `shouldBe` False
+      matchArgPCRE "--force" "{\"args\":[\"push\",\"--force\"]}" `shouldBe` True
+
+    it "enforces fine-grained pattern rules in PolicyConfig" $ do
+      let rules =
+            [ PatternRule "bash*" ["rm\\s+-rf", "DROP\\s+TABLE"] (Denied "Destructive shell command prohibited")
+            , PatternRule "git_*" ["--force"] (RequireConfirmation "Force push requires confirmation")
+            , PatternRule "admin__*" [] (Denied "Admin tools disabled in this workspace")
+            ]
+          cfg = PolicyConfig
+            { budgetCap    = unlimitedBudget
+            , rateCap      = Nothing
+            , patternRules = rules
+            }
+
+          tcBashSafe    = ToolCall "1" "bash" (object ["cmd" .= ("ls -la" :: String)])
+          tcBashDanger  = ToolCall "2" "bash" (object ["cmd" .= ("rm -rf /var/log" :: String)])
+          tcGitForce    = ToolCall "3" "git_push" (object ["flag" .= ("--force" :: String)])
+          tcGitSafe     = ToolCall "4" "git_push" (object ["flag" .= ("origin" :: String)])
+          tcAdmin       = ToolCall "5" "admin__reboot" (object [])
+
+      (vSafe, vDanger, vForce, vGitSafe, vAdmin) <- runEff $ runToolPolicyConfig cfg $ do
+        a <- authorizeTool tcBashSafe
+        b <- authorizeTool tcBashDanger
+        c <- authorizeTool tcGitForce
+        d <- authorizeTool tcGitSafe
+        e <- authorizeTool tcAdmin
+        pure (a, b, c, d, e)
+
+      vSafe    `shouldBe` AllowAuto
+      vDanger  `shouldBe` Denied "Destructive shell command prohibited"
+      vForce   `shouldBe` RequireConfirmation "Force push requires confirmation"
+      vGitSafe `shouldBe` AllowAuto
+      vAdmin   `shouldBe` Denied "Admin tools disabled in this workspace"
+
   describe "runToolPolicyMock" $ do
     it "evaluates arbitrary fine-grained tool policies" $ do
       let customPolicy call
