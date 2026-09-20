@@ -26,6 +26,7 @@ import Servant.API
 
 import Kuroko.Core.Types
 import Kuroko.Effect.LLM
+import Kuroko.Effect.Policy
 import Kuroko.Effect.Tool
 import Kuroko.Workflow.ReAct
 
@@ -51,7 +52,7 @@ type KurokoAPI =
     )
 
 -- | Servant-effectful implementation of Kuroko's REST API.
-kurokoServer :: (LLM Eff.:> es, ToolExec Eff.:> es) => Server KurokoAPI es
+kurokoServer :: (LLM Eff.:> es, ToolExec Eff.:> es, ToolPolicy Eff.:> es) => Server KurokoAPI es
 kurokoServer = handleReact :<|> listTools
   where
     handleReact req = do
@@ -73,5 +74,5 @@ kurokoServer = handleReact :<|> listTools
         }
 
 -- | Turn the Kuroko Agent API into a WAI Application running in 'Eff es'.
-serveKurokoAPI :: (Eff.IOE Eff.:> es, LLM Eff.:> es, ToolExec Eff.:> es) => Eff es (Application es)
+serveKurokoAPI :: (Eff.IOE Eff.:> es, LLM Eff.:> es, ToolExec Eff.:> es, ToolPolicy Eff.:> es) => Eff es (Application es)
 serveKurokoAPI = pure $ serve (Proxy @KurokoAPI) kurokoServer

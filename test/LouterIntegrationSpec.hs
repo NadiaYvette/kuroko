@@ -4,14 +4,10 @@
 
 module LouterIntegrationSpec (spec) where
 
-import Data.Aeson (object, (.=))
-import Effectful
 import Test.Hspec
 
-import Kuroko
 import Kuroko.Effect.LLM.Louter
 import Louter.Client.Servant (LouterClientConfig(..))
-import qualified Louter.Core.Types as LouterTypes
 import Servant.Client (BaseUrl (..), Scheme (..))
 
 spec :: Spec

@@ -9,6 +9,8 @@ module Kuroko
   , module Kuroko.Effect.LLM.OpenAI
   , module Kuroko.Effect.LLM.ServantClient
   , module Kuroko.Effect.Tool
+  , module Kuroko.Effect.Policy
+  , module Kuroko.Effect.Policy.Types
   , module Kuroko.Effect.Store
   , module Kuroko.Effect.MCP
 
@@ -31,6 +33,8 @@ import Kuroko.Effect.LLM.Mock
 import Kuroko.Effect.LLM.OpenAI
 import Kuroko.Effect.LLM.ServantClient
 import Kuroko.Effect.MCP
+import Kuroko.Effect.Policy
+import Kuroko.Effect.Policy.Types
 import Kuroko.Effect.Store
 import Kuroko.Effect.Tool
 import Kuroko.Server.API

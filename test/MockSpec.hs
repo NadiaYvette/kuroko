@@ -20,7 +20,8 @@ spec = describe "Kuroko.Workflow.ReAct (Mock Suite)" $ do
     result <- runEff $
       runLLMMock [mockResp] $
         runToolExecRegistry emptyRegistry $
-          runReActLoop 3 (ModelId "mock-model") hist
+          runToolPolicyAllowAll $
+            runReActLoop 3 (ModelId "mock-model") hist
     length result `shouldBe` 2
     (last result).content `shouldBe` "Hello from Kuroko!"
 
@@ -42,7 +43,8 @@ spec = describe "Kuroko.Workflow.ReAct (Mock Suite)" $ do
     result <- runEff $
       runLLMMock [step1Resp, step2Resp] $
         runToolExecRegistry reg $
-          runReActLoop 5 (ModelId "mock-model") hist
+          runToolPolicyAllowAll $
+            runReActLoop 5 (ModelId "mock-model") hist
 
     -- Expected history: User -> Assistant (with tool call) -> Tool Result -> Assistant final
     length result `shouldBe` 4

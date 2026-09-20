@@ -54,6 +54,8 @@ library
         Kuroko.Effect.LLM.ServantClient
         Kuroko.Effect.LLM.Louter
         Kuroko.Effect.Tool
+        Kuroko.Effect.Policy
+        Kuroko.Effect.Policy.Types
         Kuroko.Effect.Store
         Kuroko.Effect.MCP
         Kuroko.Server.MCP
@@ -120,6 +122,7 @@ test-suite kuroko-test
         StoreSpec
         DocRecordSpec
         LouterIntegrationSpec
+        PolicySpec
     build-depends:
         base,
         aeson,

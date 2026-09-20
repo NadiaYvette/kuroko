@@ -6,6 +6,7 @@ import qualified MCPSpec
 import qualified StoreSpec
 import qualified DocRecordSpec
 import qualified LouterIntegrationSpec
+import qualified PolicySpec
 
 main :: IO ()
 main = hspec $ do
@@ -14,3 +15,4 @@ main = hspec $ do
   StoreSpec.spec
   DocRecordSpec.spec
   LouterIntegrationSpec.spec
+  PolicySpec.spec
