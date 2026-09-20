@@ -16,6 +16,7 @@ module Kuroko.Effect.LLM.Louter
   , louterOpenAIConfig
   , louterAnthropicConfig
   , louterGeminiConfig
+  , louterLlamaCppConfig
   ) where
 
 import qualified Data.Aeson as Aeson
@@ -30,6 +31,7 @@ import qualified Effectful as Eff
 import Effectful.Dispatch.Dynamic
 import Network.HTTP.Client (Manager, newManager)
 import Network.HTTP.Client.TLS (tlsManagerSettings)
+import Servant.Client (BaseUrl (..), Scheme (..))
 
 import Kuroko.Core.Types
 import Kuroko.Effect.LLM
@@ -47,6 +49,9 @@ louterAnthropicConfig = LouterClient.defaultAnthropicConfig
 
 louterGeminiConfig :: Text -> LouterClientConfig
 louterGeminiConfig = LouterClient.defaultGeminiConfig
+
+louterLlamaCppConfig :: BaseUrl -> LouterClientConfig
+louterLlamaCppConfig = LouterClient.defaultLlamaCppConfig
 
 type LouterClientConfig = LouterClient.LouterClientConfig
 
